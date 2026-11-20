@@ -21,10 +21,11 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
- * Derived from Source/JavaScriptCore/yarr/YarrFlags.cpp@80f77e94c63ee7202eec3d4b5b1a021dd89011ba
+ * Derived from Source/JavaScriptCore/yarr/YarrFlags.cpp@c55364d53f971f63a709976f168d932d558b8909
  */
 
 #include "prx/libSceJsc/include/YarrFlagsExports.hpp"
+#include "prx/libc/include/General.hpp"
 
 #include <cstdint>
 #include <stdexcept>
@@ -37,13 +38,11 @@ using Jsc::YarrAbi::OptionalFlags;
 
 bool FlagFor(char16_t character, Flags& flag) {
     switch (character) {
-        case u'd': flag = Flags::HasIndices; return true;
         case u'g': flag = Flags::Global; return true;
         case u'i': flag = Flags::IgnoreCase; return true;
         case u'm': flag = Flags::Multiline; return true;
         case u's': flag = Flags::DotAll; return true;
         case u'u': flag = Flags::Unicode; return true;
-        case u'v': flag = Flags::UnicodeSets; return true;
         case u'y': flag = Flags::Sticky; return true;
         default: return false;
     }
@@ -60,18 +59,23 @@ extern "C" {
 
 OptionalFlags APS5_VABI _ZN3JSC4Yarr10parseFlagsEN3WTF10StringViewE(StringView string) {
     if (string.length && !string.characters) throw std::invalid_argument("JSC::Yarr::parseFlags: null characters with a nonzero length");
-    std::uint16_t flags = 0;
+    std::uint8_t flags = 0;
+    bool hasIndices = false;
     for (unsigned index = 0; index < string.length; ++index) {
+        const char16_t character = CodeUnit(string, index);
+        if (character == u'd') {
+            if (hasIndices) return {};
+            hasIndices = true;
+            continue;
+        }
         Flags flag;
-        if (!FlagFor(CodeUnit(string, index), flag)) return {0, false};
-        const auto bit = static_cast<std::uint16_t>(flag);
-        if (flags & bit) return {0, false};
+        if (!FlagFor(character, flag)) return {};
+        const auto bit = static_cast<std::uint8_t>(flag);
+        if (flags & bit) return {};
         flags |= bit;
     }
-    const auto unicode = static_cast<std::uint16_t>(Flags::Unicode);
-    const auto unicodeSets = static_cast<std::uint16_t>(Flags::UnicodeSets);
-    if ((flags & unicode) && (flags & unicodeSets)) return {0, false};
-    return {flags, true};
+    if (hasIndices) NotImplemented_nid_no_patch(__func__);
+    return OptionalFlags(flags);
 }
 
 }

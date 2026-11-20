@@ -9,27 +9,28 @@
 
 namespace Jsc::YarrAbi {
 
-enum class Flags : std::uint16_t {
-    HasIndices = 1 << 0,
-    Global = 1 << 1,
-    IgnoreCase = 1 << 2,
-    Multiline = 1 << 3,
-    DotAll = 1 << 4,
-    Unicode = 1 << 5,
-    UnicodeSets = 1 << 6,
-    Sticky = 1 << 7,
+enum class Flags : std::uint8_t {
+    Global = 1 << 0,
+    IgnoreCase = 1 << 1,
+    Multiline = 1 << 2,
+    Sticky = 1 << 3,
+    Unicode = 1 << 4,
+    DotAll = 1 << 5,
 };
 
 struct OptionalFlags {
-    std::uint16_t value;
     bool engaged;
+    std::uint8_t value;
+    OptionalFlags() : engaged(false), value(0) {}
+    explicit OptionalFlags(std::uint8_t flags) : engaged(true), value(flags) {}
+    OptionalFlags(const OptionalFlags& other) : engaged(other.engaged), value(other.value) {}
 };
 
-static_assert(sizeof(OptionalFlags) == 4);
-static_assert(alignof(OptionalFlags) == 2);
-static_assert(offsetof(OptionalFlags, value) == 0);
-static_assert(offsetof(OptionalFlags, engaged) == 2);
-static_assert(std::is_trivially_copyable_v<OptionalFlags>);
+static_assert(sizeof(OptionalFlags) == 2);
+static_assert(alignof(OptionalFlags) == 1);
+static_assert(offsetof(OptionalFlags, engaged) == 0);
+static_assert(offsetof(OptionalFlags, value) == 1);
+static_assert(!std::is_trivially_copyable_v<OptionalFlags>);
 
 } // namespace Jsc::YarrAbi
 
