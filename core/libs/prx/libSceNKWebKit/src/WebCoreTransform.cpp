@@ -30,11 +30,12 @@ int ClampToInteger(float value) {
 }
 
 IntRect EnclosingIntRect(const FloatRect& rect) {
-    int x = ClampToInteger(std::floor(rect.m_location.m_x));
-    int y = ClampToInteger(std::floor(rect.m_location.m_y));
-    int maxX = ClampToInteger(std::ceil(rect.m_location.m_x + rect.m_size.m_width));
-    int maxY = ClampToInteger(std::ceil(rect.m_location.m_y + rect.m_size.m_height));
-    return IntRect{IntPoint{x, y}, IntSize{maxX - x, maxY - y}};
+    const float x = static_cast<float>(ClampToInteger(std::floor(rect.m_location.m_x)));
+    const float y = static_cast<float>(ClampToInteger(std::floor(rect.m_location.m_y)));
+    const float maxX = static_cast<float>(ClampToInteger(std::ceil(rect.m_location.m_x + rect.m_size.m_width)));
+    const float maxY = static_cast<float>(ClampToInteger(std::ceil(rect.m_location.m_y + rect.m_size.m_height)));
+    return IntRect{IntPoint{ClampToInteger(x), ClampToInteger(y)},
+                   IntSize{ClampToInteger(maxX - x), ClampToInteger(maxY - y)}};
 }
 
 bool IsAffineIdentityOrTranslation(const AffineTransform& t) {

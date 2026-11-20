@@ -464,6 +464,28 @@ static void TestAffineTransform() {
     Require(mir.m_location.m_x == 20);
     Require(mir.m_size.m_width == 10);
 
+    const WebCore::AffineTransform plainAffine;
+    const WebCore::TransformationMatrix plainMatrix;
+    const WebCore::IntRect wideRect{WebCore::IntPoint{-16777215, -16777215}, WebCore::IntSize{33554431, 33554431}};
+    const WebCore::IntRect fullRect{
+        WebCore::IntPoint{std::numeric_limits<int>::min(), std::numeric_limits<int>::min()},
+        WebCore::IntSize{std::numeric_limits<int>::max(), std::numeric_limits<int>::max()}};
+    for (const bool throughMatrix : {false, true}) {
+        const WebCore::IntRect wide = throughMatrix
+            ? _ZNK7WebCore20TransformationMatrix7mapRectERKNS_7IntRectE(&plainMatrix, wideRect)
+            : _ZNK7WebCore15AffineTransform7mapRectERKNS_7IntRectE(&plainAffine, wideRect);
+        const WebCore::IntRect reference = _ZN7WebCore16enclosingIntRectERKNS_9FloatRectE(WebCore::FloatRect{
+            WebCore::FloatPoint{-16777215.0f, -16777215.0f}, WebCore::FloatSize{33554432.0f, 33554432.0f}});
+        Require(wide.m_location.m_x == -16777215 && wide.m_location.m_y == -16777215);
+        Require(wide.m_size.m_width == 33554432 && wide.m_size.m_height == 33554432);
+        Require(wide.m_size.m_width == reference.m_size.m_width && wide.m_location.m_x == reference.m_location.m_x);
+        const WebCore::IntRect full = throughMatrix
+            ? _ZNK7WebCore20TransformationMatrix7mapRectERKNS_7IntRectE(&plainMatrix, fullRect)
+            : _ZNK7WebCore15AffineTransform7mapRectERKNS_7IntRectE(&plainAffine, fullRect);
+        Require(full.m_location.m_x == std::numeric_limits<int>::min() && full.m_location.m_y == std::numeric_limits<int>::min());
+        Require(full.m_size.m_width == std::numeric_limits<int>::max() && full.m_size.m_height == std::numeric_limits<int>::max());
+    }
+
     WebCore::FloatSize fsz{10.0f, 20.0f};
     WebCore::FloatSize mfsz = _ZNK7WebCore15AffineTransform7mapSizeERKNS_9FloatSizeE(&at, fsz);
     Require(AlmostEqual(mfsz.m_width, 20.0f));
