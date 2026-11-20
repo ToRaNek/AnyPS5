@@ -240,6 +240,47 @@ static void TestURL() {
     WKRelease(aboutLast);
     WKRelease(aboutUrl);
 
+    struct OpaqueCase {
+        const char* url;
+        const char* scheme;
+        const char* path;
+        const char* last;
+    };
+    for (const OpaqueCase& item : {
+             OpaqueCase{"blob:https://example.com/2f3c", "blob", "https://example.com/2f3c", "2f3c"},
+             OpaqueCase{"javascript:location='http://example.com/a'", "javascript", "location='http://example.com/a'", "a'"},
+             OpaqueCase{"data:text/plain,http://example.com/x", "data", "text/plain,http://example.com/x", "x"},
+             OpaqueCase{"mailto:someone@example.com?subject=http://x/y", "mailto", "someone@example.com", nullptr},
+         }) {
+        auto* opaqueUrl = WKURLCreateWithUTF8CString(item.url);
+        auto* opaqueScheme = WKURLCopyScheme(opaqueUrl);
+        Require(WKStringIsEqualToUTF8CString(opaqueScheme, item.scheme));
+        WKRelease(opaqueScheme);
+        auto* opaqueHost = WKURLCopyHostName(opaqueUrl);
+        Require(WKStringIsEmpty(opaqueHost));
+        WKRelease(opaqueHost);
+        auto* opaquePath = WKURLCopyPath(opaqueUrl);
+        Require(WKStringIsEqualToUTF8CString(opaquePath, item.path));
+        WKRelease(opaquePath);
+        auto* opaqueLast = WKURLCopyLastPathComponent(opaqueUrl);
+        Require(!item.last || WKStringIsEqualToUTF8CString(opaqueLast, item.last));
+        WKRelease(opaqueLast);
+        WKRelease(opaqueUrl);
+    }
+    auto* schemeless = WKURLCreateWithUTF8CString("1http://example.com/a");
+    auto* schemelessHost = WKURLCopyHostName(schemeless);
+    Require(WKStringIsEmpty(schemelessHost));
+    WKRelease(schemelessHost);
+    WKRelease(schemeless);
+    auto* otherScheme = WKURLCreateWithUTF8CString("custom://host.example/a/b");
+    auto* otherHost = WKURLCopyHostName(otherScheme);
+    Require(WKStringIsEqualToUTF8CString(otherHost, "host.example"));
+    WKRelease(otherHost);
+    auto* otherPath = WKURLCopyPath(otherScheme);
+    Require(WKStringIsEqualToUTF8CString(otherPath, "/a/b"));
+    WKRelease(otherPath);
+    WKRelease(otherScheme);
+
     auto* rootUrl = WKURLCreateWithUTF8CString("https://example.com/");
     auto* rootPath = WKURLCopyPath(rootUrl);
     Require(WKStringIsEqualToUTF8CString(rootPath, "/"));

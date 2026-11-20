@@ -94,11 +94,15 @@ std::string CanonicalizeURL(std::string_view raw) {
     return scheme + ":" + rest;
 }
 
+std::size_t AuthorityStart(std::string_view url) {
+    const auto scheme = ExtractScheme(url);
+    if (scheme.empty() || url.substr(scheme.size(), 3) != "://") return std::string_view::npos;
+    return scheme.size() + 3;
+}
+
 std::string_view ExtractHost(std::string_view url) {
-    const auto schemeEnd = url.find("://");
-    if (schemeEnd == std::string_view::npos) return {};
-    const auto hostStart = schemeEnd + 3;
-    if (hostStart >= url.size()) return {};
+    const auto hostStart = AuthorityStart(url);
+    if (hostStart == std::string_view::npos || hostStart >= url.size()) return {};
     auto end = url.find_first_of("/?#", hostStart);
     if (end == std::string_view::npos) end = url.size();
     auto authority = url.substr(hostStart, end - hostStart);
@@ -114,9 +118,7 @@ std::string_view ExtractHost(std::string_view url) {
 }
 
 std::string_view ExtractPath(std::string_view url) {
-    const auto schemeEnd = url.find("://");
-    if (schemeEnd != std::string_view::npos) {
-        const auto hostStart = schemeEnd + 3;
+    if (const auto hostStart = AuthorityStart(url); hostStart != std::string_view::npos) {
         const auto pathStart = url.find_first_of("/?#", hostStart);
         if (pathStart == std::string_view::npos) return "/";
         if (url[pathStart] != '/') return "/";
