@@ -151,9 +151,10 @@ IntRect Region::Shape::bounds() const {
     if (minX > maxX || minY > maxY)
         return IntRect{IntPoint{0, 0}, IntSize{0, 0}};
 
-    int width = maxX - minX;
-    int height = maxY - minY;
-    return IntRect{IntPoint{minX, minY}, IntSize{width, height}};
+    constexpr std::int64_t limit = std::numeric_limits<int>::max();
+    const std::int64_t width = static_cast<std::int64_t>(maxX) - minX;
+    const std::int64_t height = static_cast<std::int64_t>(maxY) - minY;
+    return IntRect{IntPoint{minX, minY}, IntSize{static_cast<int>(std::min(width, limit)), static_cast<int>(std::min(height, limit))}};
 }
 
 

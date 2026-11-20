@@ -165,6 +165,31 @@ static void TestRegionGeometryOps() {
     }
     Require(sumArea == 7500);
 
+    constexpr int far = 2000000000;
+    constexpr int saturated = 0x7fffffff;
+    RegionHolder wide;
+    _ZN7WebCore6RegionC1ERKNS_7IntRectE(wide.ptr(), WebCore::IntRect{WebCore::IntPoint{-far, 0}, WebCore::IntSize{10, 10}});
+    RegionHolder farRight;
+    _ZN7WebCore6RegionC1ERKNS_7IntRectE(farRight.ptr(), WebCore::IntRect{WebCore::IntPoint{far, 20}, WebCore::IntSize{10, 10}});
+    _ZN7WebCore6Region5uniteERKS0_(wide.ptr(), *farRight.ptr());
+    Require(!wide.ptr()->isEmpty());
+    Require(wide.ptr()->bounds().m_location.m_x == -far);
+    Require(wide.ptr()->bounds().m_location.m_y == 0);
+    Require(wide.ptr()->bounds().m_size.m_width == saturated);
+    Require(wide.ptr()->bounds().m_size.m_height == 30);
+    Require(_ZNK7WebCore6Region9totalAreaEv(wide.ptr()) == 200);
+    RegionHolder middle;
+    _ZN7WebCore6RegionC1ERKNS_7IntRectE(middle.ptr(), WebCore::IntRect{WebCore::IntPoint{0, 40}, WebCore::IntSize{10, 10}});
+    _ZN7WebCore6Region5uniteERKS0_(wide.ptr(), *middle.ptr());
+    Require(_ZNK7WebCore6Region9totalAreaEv(wide.ptr()) == 300);
+    Require(wide.ptr()->bounds().m_size.m_width == saturated);
+    Require(wide.ptr()->bounds().m_size.m_height == 50);
+    Require(_ZNK7WebCore6Region8containsERKNS_8IntPointE(wide.ptr(), WebCore::IntPoint{-far + 5, 5}));
+    Require(_ZNK7WebCore6Region10intersectsERKS0_(wide.ptr(), *middle.ptr()));
+
+    _ZN7WebCore6RegionD1Ev(wide.ptr());
+    _ZN7WebCore6RegionD1Ev(farRight.ptr());
+    _ZN7WebCore6RegionD1Ev(middle.ptr());
     _ZN7WebCore6RegionD1Ev(r1.ptr());
     _ZN7WebCore6RegionD1Ev(r2.ptr());
     _ZN7WebCore6RegionD1Ev(disjoint.ptr());
